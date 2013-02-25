@@ -11,8 +11,10 @@ public class Ledger {
 	}
 	
 	public void addEntry(String type, Date date, double amount, boolean credit) {
-		ledgerEntries.add(new LedgerEntry(type, date, amount, credit));
+		if (amount != 0) ledgerEntries.add(new LedgerEntry(type, date, amount, credit));
 	}
+	
+	public int size() { return ledgerEntries.size(); }
 	
 	public double getPrincipal(Date date) {
 		double principal = 0;
@@ -67,6 +69,11 @@ public class Ledger {
 	}
 
 	public void print() {
+		Collections.sort(ledgerEntries, new Comparator<LedgerEntry>() {
+		    public int compare(LedgerEntry a, LedgerEntry b) {
+		        return a.getPostDate().compareTo(b.getPostDate());
+		    }
+		});
 		for (LedgerEntry entry : ledgerEntries) {
 			System.out.println(entry.toString());
 		}

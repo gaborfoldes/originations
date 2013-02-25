@@ -5,25 +5,37 @@ import java.util.*;
 
 public class LineOfCredit {
 
+	private final static double MONTHLY_FEE = 6.25;
+	private final static double INTEREST_RATE = 0.35;
+	private final static double DRAW_FEE_PCT = 0.03;
+	private final static double DRAW_FEE_MIN = 10.00;
+	
 	private int id;
 	private String appNumber;
 	private int userId;
 	private String email;
-	
 	private double creditLine;
 	private Date openDate;
-	private Ledger ledger = new Ledger();
-	private Calendar interestCalendar;
+	private Date firstDueDate;
 	
-	public LineOfCredit(Date date, int id, String appNumber, int userId, String email, double creditLine) {
+	private Ledger ledger = new Ledger();
+
+	private Calendar interestCalendar;
+	private Calendar billingCalendar;
+	private boolean hadDraw = false;
+	
+	public LineOfCredit(Date date, int id, String appNumber, int userId, String email, double creditLine, Date firstDueDate) {
 		this.id = id;
 		this.appNumber = appNumber;
 		this.userId = userId;
 		this.email = email;
-		openDate = date;
+		this.openDate = date;
 		this.creditLine = creditLine;
+		this.firstDueDate = firstDueDate;
 		interestCalendar = Calendar.getInstance();
 		interestCalendar.setTime(date);
+		billingCalendar = Calendar.getInstance();
+		billingCalendar.setTime(date);
 	}
 	
 	/* getters */
@@ -40,42 +52,46 @@ public class LineOfCredit {
 	public double getFees(Date date) { return ledger.getFees(date); }	
 	
 	public double getAccruedInterest(Date date) {
-		accrueInterest(date);
+		moveForwardTo(date);
 		return ledger.getInterest(date);
 	}	
 	
 	public double getPayoff(Date date) {
-		accrueInterest(date);
+		moveForwardTo(date);
 		return ledger.getBalance(date);
 	}	
 	
 	/* draws */
 	public double getDrawFee(double amount) {
-		return Math.max(10, amount * 0.03);
+		return Math.max(DRAW_FEE_MIN, amount * DRAW_FEE_PCT);
 	}
 	
 	public void draw(Date date, double amount) {
-		accrueInterest(date);
+		moveForwardTo(date);
+		if (!hadDraw) {
+			ledger.addEntry("Fee", billingCalendar.getTime(), getMonthlyFee(), true);
+			hadDraw = true;
+		}
 		ledger.addEntry("Principal", date, amount, true);
 		ledger.addEntry("Fee", date, getDrawFee(amount), true);
 	}
 
 	/* interest accrual */
 	public double getDailyInterest(Date date) {
-		return 0.35/365*ledger.getPrincipal(date);
+		return INTEREST_RATE/365*ledger.getPrincipal(date);
 	}	
 	
 	public void accrueInterest(Date date) {
 		while (interestCalendar.getTime().before(date)) {
-			Date intDate = interestCalendar.getTime();
-			ledger.addEntry("Interest", intDate, getDailyInterest(intDate), true);
+			double interest = getDailyInterest(interestCalendar.getTime());
 			interestCalendar.add(Calendar.DATE, 1);
+			ledger.addEntry("Interest", interestCalendar.getTime(), interest, true);
 		}
 	}
 
 	/* payments */
 	public void pay(Date date, double amount) {
-		accrueInterest(date);
+		moveForwardTo(date);
 		double fees = Math.min(ledger.getFees(date), amount);
 		ledger.addEntry("Fee", date, fees, false);
 		amount -= fees;
@@ -84,6 +100,51 @@ public class LineOfCredit {
 		amount -= interest;
 		ledger.addEntry("Principal", date, amount, false);
 	}	
+	
+	/* billing cycles */
+	public Date skipWeekEnd(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		switch (cal.get(Calendar.DAY_OF_WEEK)) {
+			case Calendar.SATURDAY: cal.add(Calendar.DATE, 2); break;
+			case Calendar.SUNDAY: cal.add(Calendar.DATE, 1); break;
+		}
+		return cal.getTime();
+	}
+	
+	public Date getNextDueDate(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(firstDueDate);
+		while (!skipWeekEnd(cal.getTime()).after(date)) {
+			cal.add(Calendar.MONTH, 1);
+		}
+		return skipWeekEnd(cal.getTime());
+	}
+
+	public Date getNextStatementDate(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(getNextDueDate(date));
+		cal.add(Calendar.DATE, -14);
+		if (!cal.getTime().after(date)) {
+			cal.setTime(getNextDueDate(getNextDueDate(date)));
+			cal.add(Calendar.DATE, -14);
+		}
+		return cal.getTime();
+	}
+	
+	public double getMonthlyFee() { return MONTHLY_FEE; }
+	
+	public void addBillingCycles(Date date) {
+		while (!getNextStatementDate(billingCalendar.getTime()).after(date)) {
+			billingCalendar.setTime(getNextStatementDate(billingCalendar.getTime()));
+			if (hadDraw) ledger.addEntry("Fee", billingCalendar.getTime(), getMonthlyFee(), true);
+		}
+	}
+	
+	public void moveForwardTo(Date date) {
+		accrueInterest(date);
+		addBillingCycles(date);
+	}
 	
 	/* diagnostic info */
 	public String toString() {

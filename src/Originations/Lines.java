@@ -14,8 +14,8 @@ public class Lines {
 		lines.put(new Integer(line.getId()), line);
 	}
 
-	public void put(Date date, int id, String appNumber, int userId, String email, double creditLine) {
-		lines.put(new Integer(id), new LineOfCredit(date, id, appNumber, userId, email, creditLine));
+	public void put(Date date, int id, String appNumber, int userId, String email, double creditLine, Date firstDueDate) {
+		lines.put(new Integer(id), new LineOfCredit(date, id, appNumber, userId, email, creditLine, firstDueDate));
 	}
 
 	public LineOfCredit get(int id) {
@@ -30,7 +30,8 @@ public class Lines {
 		int userId = Integer.valueOf(items[3]);
 		String email = items[4];
 		double creditLine = Double.valueOf(items[5]);
-		put(date, id, appNumber, userId, email, creditLine);
+		Date firstDueDate = java.sql.Date.valueOf(items[6]);
+		put(date, id, appNumber, userId, email, creditLine, firstDueDate);
 	}
 	
 	public void drawFromString(String data) {
@@ -103,5 +104,11 @@ public class Lines {
 		}
 	}
 	
+	/* get all lines in sync */
+	public void moveForwardTo(Date date) {
+		for(LineOfCredit line : lines.values()) {
+			line.moveForwardTo(date);
+		}
+	}
 	
 }
