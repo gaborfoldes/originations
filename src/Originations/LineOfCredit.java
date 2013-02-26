@@ -9,6 +9,7 @@ public class LineOfCredit {
 	private final static double INTEREST_RATE = 0.35;
 	private final static double DRAW_FEE_PCT = 0.03;
 	private final static double DRAW_FEE_MIN = 10.00;
+	private final static int DUE_AFTER = 14;
 	
 	private int id;
 	private String appNumber;
@@ -19,6 +20,7 @@ public class LineOfCredit {
 	private Date firstDueDate;
 	
 	private Ledger ledger = new Ledger();
+	private Map<Date,Double> payments = new HashMap<Date,Double>();
 
 	private Calendar interestCalendar;
 	private Calendar billingCalendar;
@@ -46,6 +48,14 @@ public class LineOfCredit {
 	public double getCreditLine() { return creditLine; }
 	public Date getOpenDate() {return openDate; }
 
+
+	/* fees */
+	public double getMonthlyFee() { return MONTHLY_FEE; }
+	
+	public double getDrawFee(double amount) {
+		return Math.max(DRAW_FEE_MIN, amount * DRAW_FEE_PCT);
+	}
+	
 	/* ledger amounts */
 	public double getOutstanding(Date date) { return ledger.getPrincipal(date); }
 
@@ -62,10 +72,6 @@ public class LineOfCredit {
 	}	
 	
 	/* draws */
-	public double getDrawFee(double amount) {
-		return Math.max(DRAW_FEE_MIN, amount * DRAW_FEE_PCT);
-	}
-	
 	public void draw(Date date, double amount) {
 		moveForwardTo(date);
 		if (!hadDraw) {
@@ -92,6 +98,7 @@ public class LineOfCredit {
 	/* payments */
 	public void pay(Date date, double amount) {
 		moveForwardTo(date);
+		payments.put(date, Double.valueOf(amount));
 		double fees = Math.min(ledger.getFees(date), amount);
 		ledger.addEntry("Fee", date, fees, false);
 		amount -= fees;
@@ -121,18 +128,54 @@ public class LineOfCredit {
 		return skipWeekEnd(cal.getTime());
 	}
 
+	public Date getNextDueDate() {
+		return skipWeekEnd(getNextDueDate(billingCalendar.getTime()));
+	}
+	
+	public Date getPreviousDueDate(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(firstDueDate);
+		Date previousDueDate = cal.getTime();
+		while (!skipWeekEnd(cal.getTime()).after(date)) {
+			previousDueDate = cal.getTime();
+			cal.add(Calendar.MONTH, 1);
+		}
+		return skipWeekEnd(previousDueDate);
+	}
+
+	public Date getPreviousDueDate() {
+		return skipWeekEnd(getNextDueDate(billingCalendar.getTime()));
+	}
+	
 	public Date getNextStatementDate(Date date) {
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(getNextDueDate(date));
-		cal.add(Calendar.DATE, -14);
+		cal.add(Calendar.DATE, -DUE_AFTER);
 		if (!cal.getTime().after(date)) {
 			cal.setTime(getNextDueDate(getNextDueDate(date)));
-			cal.add(Calendar.DATE, -14);
+			cal.add(Calendar.DATE, -DUE_AFTER);
 		}
 		return cal.getTime();
 	}
+
+	public Date getNextStatementDate() {
+		return getNextStatementDate(billingCalendar.getTime());
+	}
 	
-	public double getMonthlyFee() { return MONTHLY_FEE; }
+	public Date getPreviousStatementDate(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(getNextDueDate(date));
+		cal.add(Calendar.DATE, -DUE_AFTER);
+		if (cal.getTime().after(date)) {
+			cal.setTime(getPreviousDueDate(date));
+			cal.add(Calendar.DATE, -DUE_AFTER);
+		}
+		return cal.getTime();
+	}
+
+	public Date getPreviousStatementDate() {
+		return getPreviousStatementDate(billingCalendar.getTime());
+	}
 	
 	public void addBillingCycles(Date date) {
 		while (!getNextStatementDate(billingCalendar.getTime()).after(date)) {
@@ -146,33 +189,79 @@ public class LineOfCredit {
 		addBillingCycles(date);
 	}
 	
+	/* minimum payment */
+	public double getLastDrawOutstanding(Date date) {
+		return ledger.getLastDrawPrincipal(date);
+	}
+
+	public double getDenominator(double line) {
+		double denominator;
+		if (this.creditLine <= 350) denominator = 5;
+		else if (this.creditLine <= 500) denominator = 6;
+		else if (this.creditLine <= 750) denominator = 8;
+		else denominator = 10;
+		return denominator;
+	}
+	
+	public double getMinPayment(Date date) {
+		return getLastDrawOutstanding(date) / getDenominator(this.creditLine);
+	}
+	
+	public double getPayments(Date start, Date end) {
+		double paid = 0;
+		for (Date day : payments.keySet()) {
+			if (!day.before(start) && !day.after(end)) paid += payments.get(day).doubleValue();
+		}
+		return paid;
+	}
+	
+	public double getPaymentDue(Date date) {
+		Calendar cal = Calendar.getInstance();
+		Date lastStatementDate = getPreviousStatementDate(date);
+		cal.setTime(lastStatementDate);
+		cal.add(Calendar.DATE, DUE_AFTER);
+		double paid = getPayments(lastStatementDate, cal.getTime()); 
+		double minPayment = Math.max(0, getMinPayment(date) - paid);
+		return Math.min(minPayment, getOutstanding(date));
+	}
+	
 	/* diagnostic info */
-	public String toString() {
+	public String toString(Date date) {
 		NumberFormat twoFixed = new DecimalFormat("0.00");
-		//Formatter formatter = new Formatter();
+		SimpleDateFormat mdyyyy = new SimpleDateFormat("M/d/yyyy");
 		return
 			Integer.toString(id) +
 			"\t" + appNumber +
 			"\t" + Integer.toString(userId) +
-			"\t" + String.format("%-22s", email) +
+			"\t" + String.format("%-30s", email) +
 			"\t" + twoFixed.format(creditLine) +
-			"\t" + twoFixed.format(ledger.getPrincipal()) +
-			"\t" + twoFixed.format(ledger.getFees()) +
-			"\t" + twoFixed.format(ledger.getInterest()) +
-			"\t" + twoFixed.format(ledger.getBalance());
+			"\t" + twoFixed.format(getOutstanding(date)) +
+			"\t" + twoFixed.format(getFees(date)) +
+			"\t" + twoFixed.format(getAccruedInterest(date)) +
+			"\t" + twoFixed.format(getPayoff(date)) +
+			"\t" + mdyyyy.format(getPreviousDueDate(date)) +
+			"\t" + mdyyyy.format(getNextDueDate(date)) +
+			"\t" + twoFixed.format(getPaymentDue(date));
 	}
 
+	public String toString() {
+		return toString(Calendar.getInstance().getTime());
+	}
+	
 	public String getHeaderString() {
 		return
 			"ID" +
 			"\t" + "AppNumber" +
 			"\t" + "UserID" +
-			"\t" + String.format("%-22s", "Email") +
+			"\t" + String.format("%-30s", "Email") +
 			"\t" + "Line" +
 			"\t" + "Out" +
 			"\t" + "Fees" +
 			"\t" + "Int" +
-			"\t" + "Payoff";
+			"\t" + "Payoff" +
+			"\t" + "PrevDate" +
+			"\t" + "NextDate" +
+			"\t" + "Due";
 	}
 	
 	public void printLedger() {

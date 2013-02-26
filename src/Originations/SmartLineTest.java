@@ -15,10 +15,20 @@ public class SmartLineTest {
 		lines.loadDraws("/Users/Gabor/Code/draws.tsv");
 		lines.loadPayments("/Users/Gabor/Code/payments.tsv");
 
-		Calendar cal = new GregorianCalendar(2013, 2-1, 24);
+		Calendar cal = new GregorianCalendar(2013, Calendar.MARCH, 1);
 		lines.moveForwardTo(cal.getTime());
-		lines.print();
-//		lines.get(27).printLedger();
+		List<LineOfCredit> linesDue = lines.getLinesDue(cal.getTime());
+		Collections.sort(linesDue, new Comparator<LineOfCredit>() {
+		    public int compare(LineOfCredit a, LineOfCredit b) {
+		        return Integer.signum(a.getId() - b.getId());
+		    }
+		});
+		System.out.println(lines.values().iterator().next().getHeaderString());
+		for(LineOfCredit line : linesDue) {
+			System.out.println(line.toString());
+		}
+
+
 
 	}
 

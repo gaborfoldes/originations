@@ -18,9 +18,9 @@ public class Lines {
 		lines.put(new Integer(id), new LineOfCredit(date, id, appNumber, userId, email, creditLine, firstDueDate));
 	}
 
-	public LineOfCredit get(int id) {
-		return lines.get(Integer.valueOf(id));
-	}
+	public LineOfCredit get(int id) { return lines.get(Integer.valueOf(id)); }
+	
+	public Collection<LineOfCredit> values() { return lines.values(); }
 	
 	public void putFromString(String data) {
 		String[] items = data.split(SEPARATOR);
@@ -110,5 +110,16 @@ public class Lines {
 			line.moveForwardTo(date);
 		}
 	}
+
+	/* queries */
+	public List<LineOfCredit> getLinesDue(Date date) {
+		List<LineOfCredit> linesDue = new ArrayList<LineOfCredit>();
+		for(LineOfCredit line : lines.values()) {
+			if (line.getNextDueDate().equals(date)) linesDue.add(line);
+		}
+		return linesDue;
+	}
+	
+	
 	
 }

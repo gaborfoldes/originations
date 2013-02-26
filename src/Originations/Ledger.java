@@ -68,12 +68,30 @@ public class Ledger {
 		return getBalance(Calendar.getInstance().getTime());
 	}
 
-	public void print() {
+	public void sort() {
 		Collections.sort(ledgerEntries, new Comparator<LedgerEntry>() {
 		    public int compare(LedgerEntry a, LedgerEntry b) {
 		        return a.getPostDate().compareTo(b.getPostDate());
 		    }
 		});
+	}	
+	
+	public double getLastDrawPrincipal(Date date) {
+		this.sort();
+		double lastDraw = 0;
+		double principal = 0;
+		for (LedgerEntry entry : ledgerEntries) {
+			if (entry.getPostDate().compareTo(date) <= 0)
+				if (entry.getType() == "Principal") {
+					principal += entry.getAmount();
+					if (entry.getAmount() > 0) lastDraw = principal;
+				}
+		}
+		return lastDraw;
+	}
+	
+	public void print() {
+		this.sort();
 		for (LedgerEntry entry : ledgerEntries) {
 			System.out.println(entry.toString());
 		}
