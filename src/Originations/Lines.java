@@ -120,6 +120,28 @@ public class Lines {
 		return linesDue;
 	}
 	
+	public LineOfCredit getByEmail(String email) {
+		LineOfCredit lineByEmail = null;
+		for(LineOfCredit line : lines.values()) {
+			if (line.getEmail().toLowerCase().equals(email.toLowerCase())) {
+				lineByEmail = line;
+				break;
+			}
+		}
+		return lineByEmail;
+	}
+	
+	public LineOfCredit getByAppNumber(String appNumber) {
+		LineOfCredit lineByAppNumber = null;
+		for(LineOfCredit line : lines.values()) {
+			if (line.getAppNumber().toLowerCase().equals(appNumber.toLowerCase())) {
+				lineByAppNumber = line;
+				break;
+			}
+		}
+		return lineByAppNumber;
+	}
+
 	
 	
 }

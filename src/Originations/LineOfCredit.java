@@ -75,11 +75,11 @@ public class LineOfCredit {
 	public void draw(Date date, double amount) {
 		moveForwardTo(date);
 		if (!hadDraw) {
-			ledger.addEntry("Fee", billingCalendar.getTime(), getMonthlyFee(), true);
+			ledger.addEntry(LedgerEntry.FEE, "Monthly fee", billingCalendar.getTime(), getMonthlyFee(), true);
 			hadDraw = true;
 		}
-		ledger.addEntry("Principal", date, amount, true);
-		ledger.addEntry("Fee", date, getDrawFee(amount), true);
+		ledger.addEntry(LedgerEntry.PRINCIPAL, "Transfer", date, amount, true);
+		ledger.addEntry(LedgerEntry.FEE, "Tranfer fee", date, getDrawFee(amount), true);
 	}
 
 	/* interest accrual */
@@ -91,7 +91,7 @@ public class LineOfCredit {
 		while (interestCalendar.getTime().before(date)) {
 			double interest = getDailyInterest(interestCalendar.getTime());
 			interestCalendar.add(Calendar.DATE, 1);
-			ledger.addEntry("Interest", interestCalendar.getTime(), interest, true);
+			ledger.addEntry(LedgerEntry.INTEREST, "Accrual", interestCalendar.getTime(), interest, true);
 		}
 	}
 
@@ -100,12 +100,12 @@ public class LineOfCredit {
 		moveForwardTo(date);
 		payments.put(date, Double.valueOf(amount));
 		double fees = Math.min(ledger.getFees(date), amount);
-		ledger.addEntry("Fee", date, fees, false);
+		ledger.addEntry(LedgerEntry.FEE, "Payment", date, fees, false);
 		amount -= fees;
 		double interest = Math.min(ledger.getInterest(date), amount);
-		ledger.addEntry("Interest", date, interest, false);
+		ledger.addEntry(LedgerEntry.INTEREST, "Payment", date, interest, false);
 		amount -= interest;
-		ledger.addEntry("Principal", date, amount, false);
+		ledger.addEntry(LedgerEntry.PRINCIPAL, "Payment", date, amount, false);
 	}	
 	
 	/* billing cycles */
@@ -180,7 +180,9 @@ public class LineOfCredit {
 	public void addBillingCycles(Date date) {
 		while (!getNextStatementDate(billingCalendar.getTime()).after(date)) {
 			billingCalendar.setTime(getNextStatementDate(billingCalendar.getTime()));
-			if (hadDraw) ledger.addEntry("Fee", billingCalendar.getTime(), getMonthlyFee(), true);
+			Calendar cal = (Calendar)billingCalendar.clone();
+			cal.add(Calendar.DATE, 1);
+			if (hadDraw) ledger.addEntry(LedgerEntry.FEE, "Monthly fee", cal.getTime(), getMonthlyFee(), true);
 		}
 	}
 	
@@ -234,6 +236,7 @@ public class LineOfCredit {
 			"\t" + appNumber +
 			"\t" + Integer.toString(userId) +
 			"\t" + String.format("%-30s", email) +
+			"\t" + mdyyyy.format(getOpenDate()) +
 			"\t" + twoFixed.format(creditLine) +
 			"\t" + twoFixed.format(getOutstanding(date)) +
 			"\t" + twoFixed.format(getFees(date)) +
@@ -241,11 +244,16 @@ public class LineOfCredit {
 			"\t" + twoFixed.format(getPayoff(date)) +
 			"\t" + mdyyyy.format(getPreviousDueDate(date)) +
 			"\t" + mdyyyy.format(getNextDueDate(date)) +
+			"\t" + twoFixed.format(getMinPayment(getPreviousStatementDate(date))) +
 			"\t" + twoFixed.format(getPaymentDue(date));
 	}
 
 	public String toString() {
 		return toString(Calendar.getInstance().getTime());
+	}
+	
+	public void print() {
+		System.out.println(this.toString());
 	}
 	
 	public String getHeaderString() {
@@ -254,6 +262,7 @@ public class LineOfCredit {
 			"\t" + "AppNumber" +
 			"\t" + "UserID" +
 			"\t" + String.format("%-30s", "Email") +
+			"\t" + "Opened" +
 			"\t" + "Line" +
 			"\t" + "Out" +
 			"\t" + "Fees" +
@@ -261,6 +270,7 @@ public class LineOfCredit {
 			"\t" + "Payoff" +
 			"\t" + "PrevDate" +
 			"\t" + "NextDate" +
+			"\t" + "MinPay" +
 			"\t" + "Due";
 	}
 	
