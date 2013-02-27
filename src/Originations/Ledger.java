@@ -178,10 +178,10 @@ public class Ledger {
 	 */
 	public void print() {
 		this.sort();
+		System.out.println(ledgerEntries.get(0).getHeaderString());
 		for (LedgerEntry entry : ledgerEntries) {
 			System.out.println(entry.toString());
 		}
 	}	
-	
 	
 }

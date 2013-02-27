@@ -103,6 +103,15 @@ public class LedgerEntry {
 			getDescription() + " \t" +
 			new DecimalFormat("0.00").format(getAmount());
 	}
-	
+
+	/**
+	 * Create a header for {@link #toString()}.
+	 * 
+	 * @return returns tab-delimited header
+	 */
+	public String getHeaderString() {
+		return "PostDate\tType     \tDescription\tAmount";
+	}
+
 	
 }

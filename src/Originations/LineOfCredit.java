@@ -73,11 +73,11 @@ public class LineOfCredit {
 	
 	/* draws */
 	public void draw(Date date, double amount) {
-		moveForwardTo(date);
-		if (!hadDraw) {
+		if (!hadDraw && amount > 0) {
 			ledger.addEntry(LedgerEntry.FEE, "Monthly fee", billingCalendar.getTime(), getMonthlyFee(), true);
 			hadDraw = true;
 		}
+		moveForwardTo(date);
 		ledger.addEntry(LedgerEntry.PRINCIPAL, "Transfer", date, amount, true);
 		ledger.addEntry(LedgerEntry.FEE, "Tranfer fee", date, getDrawFee(amount), true);
 	}
@@ -232,9 +232,9 @@ public class LineOfCredit {
 		NumberFormat twoFixed = new DecimalFormat("0.00");
 		SimpleDateFormat mdyyyy = new SimpleDateFormat("M/d/yyyy");
 		return
-			Integer.toString(id) +
+			mdyyyy.format(interestCalendar.getTime()) +
+			"\t" + Integer.toString(id) +
 			"\t" + appNumber +
-			"\t" + Integer.toString(userId) +
 			"\t" + String.format("%-30s", email) +
 			"\t" + mdyyyy.format(getOpenDate()) +
 			"\t" + twoFixed.format(creditLine) +
@@ -249,7 +249,7 @@ public class LineOfCredit {
 	}
 
 	public String toString() {
-		return toString(Calendar.getInstance().getTime());
+		return toString(interestCalendar.getTime());
 	}
 	
 	public void print() {
@@ -258,20 +258,24 @@ public class LineOfCredit {
 	
 	public String getHeaderString() {
 		return
-			"ID" +
+			"AsOfDate" +
+			"\t" + "ID" +
 			"\t" + "AppNumber" +
-			"\t" + "UserID" +
 			"\t" + String.format("%-30s", "Email") +
-			"\t" + "Opened" +
+			"\t" + "Opened   " +
 			"\t" + "Line" +
 			"\t" + "Out" +
 			"\t" + "Fees" +
 			"\t" + "Int" +
 			"\t" + "Payoff" +
-			"\t" + "PrevDate" +
-			"\t" + "NextDate" +
+			"\t" + "PrevDue  " +
+			"\t" + "NextDue  " +
 			"\t" + "MinPay" +
 			"\t" + "Due";
+	}
+
+	public void printHeader() {
+		System.out.println(getHeaderString());
 	}
 	
 	public void printLedger() {

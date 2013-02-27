@@ -5,9 +5,23 @@ import java.io.*;
 
 public class SmartLineTest {
 
-	static Lines lines = new Lines();
+	private static Lines lines = new Lines();
 
-	public static void printDue(Date date) {
+	private static Date dt(int year, int month, int date) {
+		return new GregorianCalendar(year, month-1, date).getTime();
+	}
+	
+	private static Date today() {
+		return Calendar.getInstance().getTime();
+	}
+
+	private static void loadData() throws FileNotFoundException {
+		lines.loadLines("/Users/Gabor/Code/lines.tsv");
+		lines.loadDraws("/Users/Gabor/Code/draws.tsv");
+		lines.loadPayments("/Users/Gabor/Code/payments.tsv");
+	}
+	
+	private static void printDue(Date date) {
 		lines.moveForwardTo(date);
 		List<LineOfCredit> linesDue = lines.getLinesDue(date);
 		Collections.sort(linesDue, new Comparator<LineOfCredit>() {
@@ -21,21 +35,46 @@ public class SmartLineTest {
 		}
 	}
 	
+	private static void printByAppNumber(String appNumber) {
+		LineOfCredit loc = lines.getByAppNumber(appNumber);
+		if (loc != null) {
+			loc.printHeader();
+			loc.print();
+			System.out.println();
+			loc.printLedger();
+		}
+	}
+	
+	private static void printByEmail(String email) {
+		LineOfCredit loc = lines.getByEmail(email);
+		if (loc != null) {
+			loc.printHeader();
+			loc.print();
+			System.out.println();
+			loc.printLedger();
+		}
+	}
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		
-		lines.loadLines("/Users/Gabor/Code/lines.tsv");
-		lines.loadDraws("/Users/Gabor/Code/draws.tsv");
-		lines.loadPayments("/Users/Gabor/Code/payments.tsv");
+//		loadData();
+//		printDue(dt(2013, 3, 1));
 
-		//Calendar cal = new GregorianCalendar(2013, Calendar.MARCH, 1);
-		//printDue(new GregorianCalendar(2013, Calendar.MARCH, 1).getTime());
-		LineOfCredit loc = lines.getByAppNumber("LG24LZ9J4");
-		if (loc != null) {
-			loc.printLedger();
-			loc.print();
-		}
+//		lines.moveForwardTo(today());
+//		printByEmail("gabor@billfloat.com");
 
+		LineOfCredit loc = new LineOfCredit(dt(2013,1,11), 1, "", 0, "", 750, dt(2013,2,15));
+		loc.printHeader();
+		loc.print();
+		loc.draw(dt(2013,1,11), 200);
+		loc.print();
+		loc.pay(dt(2013,2,15), 25);
+		loc.print();
+		loc.moveForwardTo(dt(2013,2,26));
+		loc.print();
+		System.out.println();
+		loc.printLedger();
+		
 	}
 
 }
