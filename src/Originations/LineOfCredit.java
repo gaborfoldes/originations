@@ -20,7 +20,7 @@ public class LineOfCredit {
 	private Date firstDueDate;
 	
 	private Ledger ledger = new Ledger();
-	private Map<Date,Double> payments = new HashMap<Date,Double>();
+	public Map<Date,Double> payments = new HashMap<Date,Double>();
 
 	private Calendar interestCalendar;
 	private Calendar billingCalendar;
@@ -226,6 +226,11 @@ public class LineOfCredit {
 		double minPayment = Math.max(0, getMinPayment(date) - paid);
 		return Math.min(minPayment, getOutstanding(date));
 	}
+
+	public double getPaymentDue() {
+		return getPaymentDue(interestCalendar.getTime());
+	}
+	
 	
 	/* diagnostic info */
 	public String toString(Date date) {
