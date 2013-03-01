@@ -5,8 +5,10 @@ import java.io.*;
 
 public class Lines {
 
-	private Map<Integer,LineOfCredit> lines = new HashMap<Integer,LineOfCredit>();
 	private static final String SEPARATOR = "\t";
+
+	private Map<Integer,LineOfCredit> lines = new HashMap<Integer,LineOfCredit>();
+	public Set<String> exclusions = new HashSet<String>();
 
 	public Lines() {}
 	
@@ -41,7 +43,7 @@ public class Lines {
 		double amount = Double.valueOf(items[2]);
 		LineOfCredit loc = get(id);
 		if (loc != null) { loc.draw(date, amount); }
-		else System.out.println(id);
+		else System.out.println("Cannot draw: line " + id + " doesn't exist!");
 	}
 	
 	public void payFromString(String data) {
@@ -51,7 +53,13 @@ public class Lines {
 		double amount = Double.valueOf(items[2]);
 		LineOfCredit loc = get(id);
 		if (loc != null) { loc.pay(date, amount); }
-		else System.out.println(id);
+		else System.out.println("Cannot pay: line " + id + " doesn't exist!");
+	}
+	
+	public void excludeFromString(String data) {
+		String[] items = data.split(SEPARATOR);
+		String email = items[0];
+		exclusions.add(email);
 	}
 	
 	/* diagnostic info */
@@ -71,9 +79,7 @@ public class Lines {
 	public void loadLines(String fileName) throws FileNotFoundException {
 		Scanner scanner = new Scanner(new FileInputStream(fileName));
 		try {
-			while (scanner.hasNextLine()){
-				putFromString(scanner.nextLine());
-			}
+			while (scanner.hasNextLine()) { putFromString(scanner.nextLine()); }
 		}
 		finally {
 			scanner.close();
@@ -83,9 +89,7 @@ public class Lines {
 	public void loadDraws(String fileName) throws FileNotFoundException {
 		Scanner scanner = new Scanner(new FileInputStream(fileName));
 		try {
-			while (scanner.hasNextLine()){
-				drawFromString(scanner.nextLine());
-			}
+			while (scanner.hasNextLine()) { drawFromString(scanner.nextLine()); }
 		}
 		finally {
 			scanner.close();
@@ -95,9 +99,17 @@ public class Lines {
 	public void loadPayments(String fileName) throws FileNotFoundException {
 		Scanner scanner = new Scanner(new FileInputStream(fileName));
 		try {
-			while (scanner.hasNextLine()){
-				payFromString(scanner.nextLine());
-			}
+			while (scanner.hasNextLine()) { payFromString(scanner.nextLine()); }
+		}
+		finally {
+			scanner.close();
+		}
+	}
+	
+	public void loadExclusions(String fileName) throws FileNotFoundException {
+		Scanner scanner = new Scanner(new FileInputStream(fileName));
+		try {
+			while (scanner.hasNextLine()) { excludeFromString(scanner.nextLine()); }
 		}
 		finally {
 			scanner.close();

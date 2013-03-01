@@ -19,6 +19,7 @@ public class SmartLineTest {
 		lines.loadLines("/Users/gaborfoldes/Code/lines.tsv");
 		lines.loadDraws("/Users/gaborfoldes/Code/draws.tsv");
 		lines.loadPayments("/Users/gaborfoldes/Code/payments.tsv");
+		lines.loadExclusions("/Users/gaborfoldes/Code/exclusions.tsv");
 	}
 	
 	private static void printDue(Date date) {
@@ -31,7 +32,7 @@ public class SmartLineTest {
 		});
 		System.out.println(lines.values().iterator().next().getHeaderString());
 		for(LineOfCredit line : linesDue) {
-			if (line.getPaymentDue() > 0) System.out.println(line.toString());
+			if (line.getPaymentDue() > 0.01 && (line.getId() < 1000 || line.payments.size() == 0) && !lines.exclusions.contains(line.getEmail())) System.out.println(line.toString());
 		}
 	}
 	
@@ -59,10 +60,10 @@ public class SmartLineTest {
 		
 		loadData();
 		lines.moveForwardTo(today());
-		//printDue(dt(2013, 3, 1));
+		printDue(dt(2013, 3, 1));
 
-		//printByEmail("apachewriter@gmail.com");
-		printByAppNumber("LG05KY420");
+		//printByEmail("gabor@billfloat.com");
+		//printByAppNumber("LE369YULC");
 		//lines.get(1961).pay(dt(2013,3,15), 70);
 		//lines.print(1961);
 		//lines.get(1961).printLedger();

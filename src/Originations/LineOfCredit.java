@@ -250,7 +250,8 @@ public class LineOfCredit {
 			"\t" + mdyyyy.format(getPreviousDueDate(date)) +
 			"\t" + mdyyyy.format(getNextDueDate(date)) +
 			"\t" + twoFixed.format(getMinPayment(getPreviousStatementDate(date))) +
-			"\t" + twoFixed.format(getPaymentDue(date));
+			"\t" + twoFixed.format(getPaymentDue(date)) +
+			"\t" + payments.size();
 	}
 
 	public String toString() {
@@ -276,7 +277,8 @@ public class LineOfCredit {
 			"\t" + "PrevDue  " +
 			"\t" + "NextDue  " +
 			"\t" + "MinPay" +
-			"\t" + "Due";
+			"\t" + "Due" +
+			"\t" + "Pmnts";
 	}
 
 	public void printHeader() {
