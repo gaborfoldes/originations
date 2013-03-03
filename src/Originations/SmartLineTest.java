@@ -16,10 +16,10 @@ public class SmartLineTest {
 	}
 
 	private static void loadData() throws FileNotFoundException {
-		lines.loadLines("/Users/gaborfoldes/Code/lines.tsv");
-		lines.loadDraws("/Users/gaborfoldes/Code/draws.tsv");
-		lines.loadPayments("/Users/gaborfoldes/Code/payments.tsv");
-		lines.loadExclusions("/Users/gaborfoldes/Code/exclusions.tsv");
+		lines.loadLines("/Users/gabor/Code/lines.tsv");
+		lines.loadDraws("/Users/gabor/Code/draws.tsv");
+		lines.loadPayments("/Users/gabor/Code/payments.tsv");
+		//lines.loadExclusions("/Users/gaborfoldes/Code/exclusions.tsv");
 	}
 	
 	private static void printDue(Date date) {
@@ -58,9 +58,14 @@ public class SmartLineTest {
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		
+		Calendar start_cal = Calendar.getInstance();
 		loadData();
-		lines.moveForwardTo(today());
-		printDue(dt(2013, 3, 1));
+		System.out.println("Done!");
+		Calendar end_cal = Calendar.getInstance();
+		System.out.println((end_cal.getTime().getTime() - start_cal.getTime().getTime())/1000.00);
+//		lines.moveForwardTo(today());
+//		lines.print();
+//		printDue(dt(2013, 3, 1));
 
 		//printByEmail("gabor@billfloat.com");
 		//printByAppNumber("LE369YULC");

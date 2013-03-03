@@ -1,3 +1,6 @@
+
+require "date"
+
 module LOC
 
 	class Ledger
@@ -8,28 +11,28 @@ module LOC
 			@entries = []
 		end
 		
-		def balance(type, date)
+		def add(*params)
+			@entries.push LedgerEntry.new(*params)
+		end
+
+		def balance(type, date=Date.today)
 			s = 0
 			@entries.each do |entry|
-				if (date == nil || entry.postDate <= date)
-					s += (entry.type == type || type == LOC::LedgerEntry::Total ? entry.signed_amount : 0)
+				if entry.post_date <= date && (type == entry.type || type == LedgerEntry::TOTAL)
+					s += entry.signed_amount
 				end
 			end
 			return s
 		end
 		
-		def outstanding_last_draw(date)
+		def outstanding_last_draw(date=Date.today)
 			@entries.sort! { |a,b| a.post_date <=> b.post_date }
-			last_draw = 0;
-			s = 0;
+			last_draw = 0
+			s = 0
 			@entries.each do |entry|
-				if (date == nil || entry.postDate <= date)
-					if (entry.type == LOC::LedgerEntry::Principal)
-						s += entry.signed_amount
-						if (entry.signed_amount > 0)
-							last_draw = s
-						end
-					end
+				if entry.post_date <= date && entry.type == LedgerEntry::PRINCIPAL
+					s += entry.signed_amount
+					last_draw = s if (entry.credit == 1)
 				end
 			end
 			return last_draw
@@ -37,7 +40,7 @@ module LOC
 		
 		def to_s
 			@entries.sort! { |a,b| a.post_date <=> b.post_date }
-			all = LOC::LedgerEntry::Header + "\n"
+			all = LedgerEntry::HEADER + "\n"
 			@entries.each do |entry|
 				all += entry.to_s + "\n"
 			end

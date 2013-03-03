@@ -2,21 +2,17 @@ module LOC
 
 	class LedgerEntry
 
-		Total = 0
-		Principal = 1
-		Interest = 2
-		Fee = 3
+		TOTAL = 0
+		PRINCIPAL = 1
+		INTEREST = 2
+		FEE = 3
 
-		Credit = true
-		Debit = false
+		CREDIT = true
+		DEBIT = false
 
-		Header = "PostDate\tType     \tDescription\tAmount\n--------\t----     \t-----------\t------"
+		HEADER = "PostDate\tType     \tDescription\tAmount\n--------\t----     \t-----------\t------"
 		
-		attr_accessor :type
-		attr_accessor :desc
-		attr_accessor :post_date
-		attr_accessor :amount
-		attr_accessor :credit
+		attr_accessor :type, :desc, :post_date, :amount, :credit
 		
 		def initialize(type, desc, post_date, amount, credit)
 			@type = type
@@ -35,7 +31,7 @@ module LOC
 		end
 		
 		def to_s
-			[@post_date, type_str, @desc, sprintf("%0.2f", signed_amount)].join("\t")
+			[@post_date, type_str, @desc, sprintf("%0.3f", signed_amount)].join("\t")
 		end
 		
 	end
