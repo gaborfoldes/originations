@@ -1,14 +1,14 @@
 
 require "./LOC"
-include LOC
-require "date"
+#require "date"
 
 lines = Lines.new
-lines.load_lines("/Users/gabor/Code/lines.tsv")
-lines.load_draws("/Users/gabor/Code/draws.tsv")
-lines.load_payments("/Users/gabor/Code/payments.tsv")
-lines.print(2911)
-puts lines.lines[2911].ledger
+#lines.load_lines("/Users/gabor/Code/lines.tsv")
+#lines.load_draws("/Users/gabor/Code/draws.tsv")
+#lines.load_payments("/Users/gabor/Code/payments.tsv")
+#lines.print(2911)
+#puts lines.lines[2911].ledger
+
 
 
 =begin

@@ -58,16 +58,12 @@ public class SmartLineTest {
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		
-		Calendar start_cal = Calendar.getInstance();
 		loadData();
-		System.out.println("Done!");
-		Calendar end_cal = Calendar.getInstance();
-		System.out.println((end_cal.getTime().getTime() - start_cal.getTime().getTime())/1000.00);
 //		lines.moveForwardTo(today());
 //		lines.print();
 //		printDue(dt(2013, 3, 1));
 
-		//printByEmail("gabor@billfloat.com");
+		printByEmail("y.crowder@yahoo.com");
 		//printByAppNumber("LE369YULC");
 		//lines.get(1961).pay(dt(2013,3,15), 70);
 		//lines.print(1961);

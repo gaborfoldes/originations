@@ -9,8 +9,14 @@ module LOC
 		DRAW_FEE_MIN = 10.00
 		DUE_AFTER = 14
 
-		HEADER = ["AsOfDate", "ID", "App Number", "Email               ", "Opened   ", "Line",
-		          "Pr.", "Fees", "Int.", "Balance", "Prev Due", "Next Due", "Min Pay", "Amt Due"].join("\t")
+		COL_WIDTHS = [11, 5, 11, 30, 11, 7, 7, 7, 7, 7, 11, 11, 7, 7, 11, 7]
+		COL_JUST = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0]
+		HEADER = [
+			"AsOfDate", "ID", "AppNumber", "Email", "Opened", "Line",
+		    "Pr.", "Fees", "Int.", "Balance", "PrevDue", "NextDue", "MinPay", "AmtDue", "LastPaid", "PaidAmt"
+		].each_with_index.map { |s, i|
+			(COL_JUST[i] == 1) ? s.to_s[0..COL_WIDTHS[i]-1].ljust(COL_WIDTHS[i]) : s.to_s[0..COL_WIDTHS[i]-1].rjust(COL_WIDTHS[i])
+		}.join(" ")
 		
 		attr_accessor :id, :app_number, :user_id, :email, :credit_line, :open_date
 		attr_accessor :ledger, :payments
@@ -115,7 +121,8 @@ module LOC
 		def prev_due_date(date = @last_billing_date) 
 			d = @first_due_date
 			d = d >> 1 while skip_weekend(d) <= date 
-			return skip_weekend(d << 1)
+#			return skip_weekend(d << 1)
+			return (@first_due_date <= (d << 1)) ? skip_weekend(d << 1) : nil
 		end
 	
 		
@@ -127,7 +134,9 @@ module LOC
 		
 		def prev_statement_date(date = @last_billing_date) 
 			d = next_due_date(date) - DUE_AFTER
-			d = prev_due_date(date) - DUE_AFTER if (d > date)
+			if (d > date) then
+				d = prev_due_date(date).nil? ? nil : prev_due_date(date) - DUE_AFTER
+			end
 			return d
 		end
 	
@@ -154,7 +163,7 @@ module LOC
 		end
 		
 		def min_payment(date = @last_billing_date)
-			@ledger.outstanding_last_draw(date) / denominator
+			@ledger.outstanding_last_draw(date||@last_billing_date) / denominator
 		end
 
 		
@@ -167,16 +176,40 @@ module LOC
 		end
 		
 		def payment_due(date = @last_interest_date) 
-			p = [0, min_payment(date) - paid(prev_statement_date(date), date)].max
+			p = [0, min_payment(prev_statement_date(date)) - paid(prev_statement_date(date), date)].max
 			return [p, total_balance(date)].min
 		end
 	
 		
 		# display
+		def pad(s, i)
+			if COL_JUST[i] == 1 then
+				s.to_s[0..COL_WIDTHS[i]-1].ljust(COL_WIDTHS[i])
+			else
+				s.to_s[0..COL_WIDTHS[i]-1].rjust(COL_WIDTHS[i])
+			end
+		end
+
 		def to_s(date = @last_interest_date)
-				[date, @id, @app_number, @email, @open_date, @credit_line,
-				 '%.2f'%principal(date), '%.2f'%fees(date), '%.2f'%accrued_interest(date), '%.2f'%total_balance(date),
-				 prev_due_date(date), next_due_date(date), '%.2f'%min_payment(prev_statement_date(date)), '%.2f'%payment_due(date)].join("\t")
+			[date,
+			 @id,
+			 @app_number,
+			 @email,
+			 @open_date,
+			 '%.2f' % @credit_line,
+			 '%.2f' % principal(date),
+			 '%.2f' % fees(date),
+			 '%.2f' % accrued_interest(date),
+			 '%.2f' % total_balance(date),
+			 prev_due_date(date),
+			 next_due_date(date),
+			 '%.2f' % min_payment(prev_statement_date(date)),
+			 '%.2f' % payment_due(date),
+			 @payments.keys.last,
+			 @payments.values.last.nil? ? "" : '%.2f' % @payments.values.last
+			].each_with_index.map { |s, i|
+				(COL_JUST[i] == 1) ? s.to_s[0..COL_WIDTHS[i]-1].ljust(COL_WIDTHS[i]) : s.to_s[0..COL_WIDTHS[i]-1].rjust(COL_WIDTHS[i])
+			}.join(" ")
 		end
 
 
