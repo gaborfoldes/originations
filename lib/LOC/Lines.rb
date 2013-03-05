@@ -21,9 +21,7 @@ module LOC
 
 		# display info
 		def print(ids=nil)
-			
 			puts LineOfCredit::HEADER + "\n"
-			
 			if ids.nil? then
 				@lines.each do |id, line| 
 					puts line.to_s + "\n"
@@ -36,6 +34,22 @@ module LOC
 			end
 			return "Done"
 		end
+
+		def print_csv(ids=nil)
+			puts LineOfCredit::COL_NAMES.join(",") + "\n"
+			if ids.nil? then
+				@lines.each do |id, line| 
+					puts line.to_csv + "\n"
+				end
+			else
+				ids = [ids] if ids.is_a? Fixnum
+				ids.each do |id|
+					puts lines[id].to_csv + "\n"
+				end
+			end
+			return "Done"
+		end
+
 		
 		def show(ids)
 			build(ids)
@@ -46,39 +60,29 @@ module LOC
 		# load data
 
 		def by_email(email)
-			con = DBConnect.new
-			ids = con.ids_by_email(email)
-			con.close
-			return ids
+			return SmartLineDB.ids_by_email(email)
 		end
 
 		def by_app_number(app_number)
-			con = DBConnect.new
-			ids = con.ids_by_app_number(app_number)
-			con.close
-			return ids
+			return SmartLineDB.ids_by_app_number(app_number)
 		end
 
 		def build(ids=nil)
 			
-			con = DBConnect.new
-
 			if ids.nil? then
-				con.get_line.each { |row| parse_line row }
-				con.get_draws.each { |row| parse_draw row }
-				con.get_payments.each { |row| parse_payment row }
+				SmartLineDB.get_line.each { |row| parse_line row }
+				SmartLineDB.get_draws.each { |row| parse_draw row }
+				SmartLineDB.get_payments.each { |row| parse_payment row }
 				move_forward_to Date.today
 			else
 				ids = [ids] if ids.is_a? Fixnum
 				ids.each do |id|
-					con.get_line(id).each { |row| parse_line row }
-					con.get_draws(id).each { |row| parse_draw row }
-					con.get_payments(id).each { |row| parse_payment row }
+					SmartLineDB.get_line(id).each { |row| parse_line row }
+					SmartLineDB.get_draws(id).each { |row| parse_draw row }
+					SmartLineDB.get_payments(id).each { |row| parse_payment row }
 					@lines[id].move_forward_to Date.today
 				end
 			end
-			con.close
-
 			return "Done"
 		end 
 

@@ -10,11 +10,9 @@ module LOC
 		DUE_AFTER = 14
 
 		COL_WIDTHS = [11, 5, 11, 30, 11, 7, 7, 7, 7, 7, 11, 11, 7, 7, 11, 7]
-		COL_JUST = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0]
-		HEADER = [
-			"AsOfDate", "ID", "AppNumber", "Email", "Opened", "Line",
-		    "Pr.", "Fees", "Int.", "Balance", "PrevDue", "NextDue", "MinPay", "AmtDue", "LastPaid", "PaidAmt"
-		].each_with_index.map { |s, i|
+		COL_JUST   = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0]
+		COL_NAMES  = ["AsOfDate", "ID", "AppNumber", "Email", "Opened", "Line", "Pr.", "Fees", "Int.", "Balance", "PrevDue", "NextDue", "MinPay", "AmtDue", "LastPaid", "PaidAmt"]
+		HEADER = COL_NAMES.each_with_index.map { |s, i|
 			(COL_JUST[i] == 1) ? s.to_s[0..COL_WIDTHS[i]-1].ljust(COL_WIDTHS[i]) : s.to_s[0..COL_WIDTHS[i]-1].rjust(COL_WIDTHS[i])
 		}.join(" ")
 		
@@ -210,6 +208,26 @@ module LOC
 			].each_with_index.map { |s, i|
 				(COL_JUST[i] == 1) ? s.to_s[0..COL_WIDTHS[i]-1].ljust(COL_WIDTHS[i]) : s.to_s[0..COL_WIDTHS[i]-1].rjust(COL_WIDTHS[i])
 			}.join(" ")
+		end
+
+		def to_csv(date = @last_interest_date)
+			[date,
+			 @id,
+			 @app_number,
+			 @email,
+			 @open_date,
+			 '%.2f' % @credit_line,
+			 '%.2f' % principal(date),
+			 '%.2f' % fees(date),
+			 '%.2f' % accrued_interest(date),
+			 '%.2f' % total_balance(date),
+			 prev_due_date(date),
+			 next_due_date(date),
+			 '%.2f' % min_payment(prev_statement_date(date)),
+			 '%.2f' % payment_due(date),
+			 @payments.keys.last,
+			 @payments.values.last.nil? ? "" : '%.2f' % @payments.values.last
+			].join(",")
 		end
 
 
